@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        AWS_REGION = 'us-east-1'
+        AWS_REGION = 'eu-west-3'
         ANSIBLE_HOST_KEY_CHECKING = 'False'
     }
 
@@ -61,8 +61,40 @@ pipeline {
 
         stage('Ansible Deploy') {
             steps {
-                sh '''
+                sh """
                 echo "⚙️ Configuration du serveur avec Ansible..."
                 cat > inventory.ini << EOF
 [web]
 ${EC2_IP} ansible_user=ubuntu ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+EOF
+                ansible-playbook -i inventory.ini ansible/apache.yml
+                """
+            }
+        }
+
+        stage('Test') {
+            steps {
+                sh """
+                echo "🧪 Test du serveur web..."
+                curl -I http://${EC2_IP} | head -n 1
+                curl -s http://${EC2_IP} | grep "DevOps Projet"
+                echo "✅ Test réussi !"
+                """
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "🎉 PIPELINE RÉUSSI !"
+            echo "🌍 Serveur accessible sur : http://${env.EC2_IP}"
+        }
+        failure {
+            echo "❌ PIPELINE ÉCHOUÉ !"
+            error "Le pipeline a échoué. Vérifie les logs."
+        }
+        always {
+            echo "🏁 Fin du pipeline"
+        }
+    }
+}
