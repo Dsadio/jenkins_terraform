@@ -1,0 +1,43 @@
+---
+- name: Installer et configurer Apache
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    - name: Mettre à jour le cache apt
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Installer Apache
+      apt:
+        name: apache2
+        state: present
+
+    - name: Démarrer et activer Apache
+      service:
+        name: apache2
+        state: started
+        enabled: yes
+
+    - name: Copier la page HTML personnalisée
+      copy:
+        src: index.html
+        dest: /var/www/html/index.html
+        owner: www-data
+        group: www-data
+        mode: '0644'
+
+    - name: Vérifier qu'Apache répond
+      uri:
+        url: http://localhost
+        status_code: 200
+      register: result
+      until: result.status == 200
+      retries: 3
+      delay: 5
+
+    - name: Afficher le succès
+      debug:
+        msg: "✅ Apache est installé et configuré avec succès !"
