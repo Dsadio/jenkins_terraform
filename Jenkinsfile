@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        AWS_REGION = 'eu-west-3'
+        AWS_REGION = 'us-east-1'
         ANSIBLE_HOST_KEY_CHECKING = 'False'
     }
 
